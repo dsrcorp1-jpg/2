@@ -268,30 +268,24 @@
 <!-- ===================== TAB 1: DASHBOARD ===================== -->
 <div class="tab-panel active" id="tab-dashboard">
   <div class="grid-4" id="dashStats" style="margin-bottom:16px"></div>
-  <div class="grid-2">
-    <div>
-      <div class="card">
-        <div class="card-title">⚠️ 긴급 알림</div>
-        <div id="dashAlerts"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📋 전체 오더 진행 현황</div>
-        <div class="canvas-wrap"><canvas id="chartStage"></canvas></div>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <div class="card-title">🔄 오더별 진행 단계</div>
-        <div id="dashOrderFlow"></div>
-      </div>
-    </div>
+  <div class="card">
+    <div class="card-title">⚠️ 긴급 알림</div>
+    <div id="dashAlerts"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔄 오더별 진행 단계</div>
+    <div id="dashOrderFlow"></div>
   </div>
 </div>
 
 <!-- ===================== TAB 2: NEGO ===================== -->
 <div class="tab-panel" id="tab-nego">
   <div class="card">
-    <div class="card-title">💬 단가 네고 현황</div>
+    <div class="card-title">📦 품목별 네고 현황</div>
+    <div id="negoProductSummary"></div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">📋 오더별 네고 상세 <span style="font-size:12px;font-weight:400;color:var(--gray-600);margin-left:6px">▼ 클릭하면 상세 펼침</span></div>
     <div style="overflow-x:auto">
     <table class="tbl">
       <thead><tr>
@@ -303,7 +297,7 @@
     </div>
   </div>
   <div class="card mt-16">
-    <div class="card-title">📊 공급사 오퍼 vs 계약가 비교</div>
+    <div class="card-title">📊 품목별 오퍼가 vs 계약가</div>
     <div class="canvas-wrap"><canvas id="chartNego"></canvas></div>
   </div>
 </div>
@@ -311,7 +305,11 @@
 <!-- ===================== TAB 3: CONTRACT ===================== -->
 <div class="tab-panel" id="tab-contract">
   <div class="card">
-    <div class="card-title">📝 계약 현황</div>
+    <div class="card-title">📦 품목별 계약 현황</div>
+    <div id="contractProductSummary"></div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">📋 계약 상세 내역</div>
     <div style="overflow-x:auto">
     <table class="tbl">
       <thead><tr>
@@ -327,33 +325,34 @@
 <!-- ===================== TAB 4: SHIPMENT ===================== -->
 <div class="tab-panel" id="tab-shipment">
   <div class="card">
-    <div class="card-title">🚢 선적·운송 현황</div>
+    <div class="card-title">⚡ 통관 임박 — 입항 예정 건 <span style="font-size:12px;font-weight:400;color:var(--gray-600);margin-left:6px">ETA 기준 14일 이내</span></div>
+    <div id="shipmentUrgent"></div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">🚢 전체 선적·운송 현황 <span style="font-size:12px;font-weight:400;color:var(--gray-600);margin-left:6px">ETD 임박순 정렬</span></div>
     <div style="overflow-x:auto">
-    <table class="tbl" id="shipmentTable">
+    <table class="tbl">
       <thead><tr>
-        <th>오더번호</th><th>품목</th><th>공급사</th><th>선박명</th>
+        <th>D-day</th><th>오더번호</th><th>품목</th><th>공급사</th><th>선박명</th>
         <th>B/L No.</th><th>선적항</th><th>도착항</th><th>ETD</th><th>ETA</th><th>상태</th>
       </tr></thead>
       <tbody id="shipmentTableBody"></tbody>
     </table>
     </div>
   </div>
-  <div class="card mt-16">
-    <div class="card-title">🗓 입항 일정 타임라인</div>
-    <div id="shipmentTimeline"></div>
-  </div>
 </div>
 
 <!-- ===================== TAB 5: CUSTOMS ===================== -->
 <div class="tab-panel" id="tab-customs">
+  <div class="grid-3" id="customsStats" style="margin-bottom:16px"></div>
   <div class="card">
-    <div class="card-title">🏛 통관·배차 현황</div>
+    <div class="card-title">🏛 통관 + 배차 동시 현황</div>
     <div style="overflow-x:auto">
     <table class="tbl">
       <thead><tr>
         <th>오더번호</th><th>품목</th><th>수량(MT)</th>
-        <th>입항일</th><th>신고일</th><th>통관완료일</th><th>통관상태</th>
-        <th>배차상태</th><th>배차일</th><th>목적지</th>
+        <th>입항일</th><th>신고일</th><th>통관완료일</th><th>통관</th>
+        <th>배차</th><th>배차일</th><th>목적지</th>
       </tr></thead>
       <tbody id="customsTableBody"></tbody>
     </table>
@@ -363,7 +362,7 @@
 
 <!-- ===================== TAB 6: INVENTORY ===================== -->
 <div class="tab-panel" id="tab-inventory">
-  <div class="grid-4" id="invStats" style="margin-bottom:16px"></div>
+  <div id="invProductCards" style="margin-bottom:16px"></div>
   <div class="card">
     <div class="card-title">📦 품목별 재고 현황 (빨간선 = 안전재고 기준)</div>
     <div id="invList"></div>
@@ -527,36 +526,45 @@ function renderDashboard() {
   }).join('');
   document.getElementById('dashOrderFlow').innerHTML = flowHtml;
 
-  // Stage donut chart
-  const ctx = document.getElementById('chartStage').getContext('2d');
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: STAGE_ORDER.map(s => STAGE_ICONS[s] + ' ' + s),
-      datasets: [{
-        data: STAGE_ORDER.map(s => stageCounts[s]),
-        backgroundColor: ['#fef3c7','#e0e7ff','#f3e8ff','#dbeafe','#cffafe','#fef9c3','#dcfce7'],
-        borderColor: ['#f59e0b','#818cf8','#a855f7','#3b82f6','#22d3ee','#eab308','#22c55e'],
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { font: { size: 12 } } } },
-      cutout: '55%'
-    }
-  });
 }
 
 // ─────────────────────────────────────────
 // NEGO TAB
 // ─────────────────────────────────────────
 function renderNego() {
+  // 1) 품목별 요약 카드
+  const products = [...new Set(DATA.orders.map(o => o.product))];
+  const summaryHtml = `<div class="grid-3">${products.map(p => {
+    const orders = DATA.orders.filter(o => o.product === p);
+    const contracted = orders.filter(o => o.negotiation.contractPrice);
+    const avgOffer = contracted.length ? Math.round(contracted.reduce((s,o) => s + o.negotiation.offerPrice, 0) / contracted.length) : null;
+    const avgContract = contracted.length ? Math.round(contracted.reduce((s,o) => s + o.negotiation.contractPrice, 0) / contracted.length) : null;
+    const avgMarket = contracted.length ? Math.round(contracted.reduce((s,o) => s + o.negotiation.marketRef, 0) / contracted.length) : null;
+    const totalQty = orders.reduce((s,o) => s + o.quantity, 0);
+    const hasActive = orders.some(o => o.negotiation.status === '진행중');
+    const saving = avgOffer && avgContract ? avgOffer - avgContract : null;
+    return `<div class="card" style="margin-bottom:0;border:2px solid ${hasActive ? 'var(--warning)' : 'var(--gray-200)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="fw-600" style="font-size:15px">${p}</span>
+        ${hasActive ? '<span class="stage-badge stage-네고중">네고중</span>' : '<span class="stage-badge stage-계약완료">완료</span>'}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div><span style="color:var(--gray-600)">총 수량</span><br><b>${totalQty.toLocaleString()} MT</b></div>
+        <div><span style="color:var(--gray-600)">오더 수</span><br><b>${orders.length}건</b></div>
+        <div><span style="color:var(--gray-600)">평균 오퍼가</span><br><b>${avgOffer ? '$'+avgOffer : '—'}</b></div>
+        <div><span style="color:var(--gray-600)">평균 계약가</span><br><b style="color:var(--success)">${avgContract ? '$'+avgContract : '—'}</b></div>
+        <div><span style="color:var(--gray-600)">ICIS 시장가</span><br><b>${avgMarket ? '$'+avgMarket : '—'}</b></div>
+        <div><span style="color:var(--gray-600)">절감액</span><br><b class="${saving > 0 ? 'price-good' : ''}">${saving ? '-$'+saving : '—'}</b></div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  document.getElementById('negoProductSummary').innerHTML = summaryHtml;
+
+  // 2) 오더별 상세 테이블
   const rows = DATA.orders.map(o => {
     const n = o.negotiation;
     const saving = n.offerPrice && n.contractPrice ? n.offerPrice - n.contractPrice : null;
     const savingPct = saving ? ((saving / n.offerPrice)*100).toFixed(1) : null;
-    const vsMkt = n.contractPrice && n.marketRef ? n.contractPrice - n.marketRef : null;
     return `<tr>
       <td class="fw-600">${o.id}</td>
       <td>${o.product} <span class="chip">${o.grade}</span></td>
@@ -576,13 +584,12 @@ function renderNego() {
   const active = DATA.orders.filter(o => o.negotiation.status === '진행중').length;
   document.getElementById('badge-nego').textContent = active;
 
-  // Chart
-  const labels = DATA.orders.map(o => o.product + '\n' + o.id);
+  // 3) 차트
   const ctx = document.getElementById('chartNego').getContext('2d');
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: DATA.orders.map(o => o.product),
+      labels: DATA.orders.map(o => o.product + ' (' + o.id + ')'),
       datasets: [
         { label: '오퍼가', data: DATA.orders.map(o => o.negotiation.offerPrice), backgroundColor: 'rgba(239,68,68,0.6)', borderColor: '#ef4444', borderWidth: 1 },
         { label: '카운터가', data: DATA.orders.map(o => o.negotiation.counterPrice), backgroundColor: 'rgba(251,146,60,0.6)', borderColor: '#f97316', borderWidth: 1 },
@@ -602,6 +609,34 @@ function renderNego() {
 // CONTRACT TAB
 // ─────────────────────────────────────────
 function renderContract() {
+  // 1) 품목별 요약
+  const products = [...new Set(DATA.orders.map(o => o.product))];
+  const summaryHtml = `<div style="overflow-x:auto"><table class="tbl">
+    <thead><tr>
+      <th>품목</th><th>계약 건수</th><th>총 수량(MT)</th><th>평균 계약가</th><th>납기월</th><th>결제조건</th><th>진행 단계</th>
+    </tr></thead>
+    <tbody>${products.map(p => {
+      const orders = DATA.orders.filter(o => o.product === p);
+      const contracted = orders.filter(o => o.negotiation.contractPrice);
+      const totalQty = orders.reduce((s,o) => s + o.quantity, 0);
+      const avgPrice = contracted.length ? Math.round(contracted.reduce((s,o) => s + o.negotiation.contractPrice, 0) / contracted.length) : null;
+      const months = [...new Set(orders.filter(o=>o.contract.deliveryMonth).map(o=>o.contract.deliveryMonth))].join(', ');
+      const payTerms = [...new Set(orders.filter(o=>o.contract.paymentTerms).map(o=>o.contract.paymentTerms))].join(' / ');
+      const stages = [...new Set(orders.map(o=>o.stage))];
+      return `<tr>
+        <td class="fw-600">${p}</td>
+        <td class="text-center">${orders.length}건</td>
+        <td class="text-right fw-600">${totalQty.toLocaleString()}</td>
+        <td class="text-right">${avgPrice ? '<b>$'+avgPrice+'</b>' : '—'}</td>
+        <td>${months || '—'}</td>
+        <td>${payTerms || '—'}</td>
+        <td>${stages.map(s => `<span class="stage-badge stage-${s}">${STAGE_ICONS[s]} ${s}</span>`).join(' ')}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+  document.getElementById('contractProductSummary').innerHTML = summaryHtml;
+
+  // 2) 상세 테이블
   const rows = DATA.orders.map(o => {
     const c = o.contract;
     return `<tr>
@@ -624,15 +659,56 @@ function renderContract() {
 // SHIPMENT TAB
 // ─────────────────────────────────────────
 function renderShipment() {
-  const rows = DATA.orders.map(o => {
+  const TODAY = new Date('2026-06-11');
+
+  // 1) 통관 임박 섹션 (ETA 14일 이내, 항해중·선적완료)
+  const urgent = DATA.orders
+    .filter(o => o.shipment.eta && ['선적완료','항해중'].includes(o.stage))
+    .map(o => ({ ...o, etaDays: Math.ceil((new Date(o.shipment.eta) - TODAY) / 86400000) }))
+    .filter(o => o.etaDays <= 14)
+    .sort((a,b) => a.etaDays - b.etaDays);
+
+  const urgentHtml = urgent.length ? urgent.map(o => {
+    const color = o.etaDays <= 3 ? 'var(--danger)' : o.etaDays <= 7 ? 'var(--warning)' : 'var(--info)';
+    return `<div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--gray-100)">
+      <div style="min-width:60px;text-align:center;background:${color};color:white;border-radius:8px;padding:6px 10px;font-weight:700;font-size:15px">D-${o.etaDays}</div>
+      <div style="flex:1">
+        <div class="fw-600">${o.id} · ${o.product} <span class="chip">${o.grade}</span></div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:3px">
+          ${o.supplier} · ${o.shipment.vessel || '선박 미정'} · ${o.shipment.portOfLoading} → ${o.shipment.portOfDischarge}
+        </div>
+      </div>
+      <div style="text-align:right;font-size:12px">
+        <div>ETD <b>${o.shipment.etd}</b></div>
+        <div style="color:${color}">ETA <b>${o.shipment.eta}</b></div>
+      </div>
+      <span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span>
+    </div>`;
+  }).join('') : '<div class="alert alert-success">✅ 14일 내 입항 예정 건이 없습니다.</div>';
+  document.getElementById('shipmentUrgent').innerHTML = urgentHtml;
+
+  // 2) 전체 테이블 — ETD 임박순 정렬 (ETD 있는 것 먼저, 없는 것 뒤로)
+  const sorted = [...DATA.orders].sort((a, b) => {
+    if (!a.shipment.etd && !b.shipment.etd) return 0;
+    if (!a.shipment.etd) return 1;
+    if (!b.shipment.etd) return -1;
+    return a.shipment.etd.localeCompare(b.shipment.etd);
+  });
+
+  const rows = sorted.map(o => {
     const s = o.shipment;
-    const stageStyle = ['선적완료','항해중','통관중','배차완료'].includes(o.stage) ? '' : 'opacity:0.5';
-    return `<tr style="${stageStyle}">
+    const etdDays = s.etd ? Math.ceil((new Date(s.etd) - TODAY) / 86400000) : null;
+    const dTag = etdDays !== null
+      ? `<span style="font-weight:700;color:${etdDays<=7?'var(--danger)':etdDays<=14?'var(--warning)':'var(--gray-600)'}">${etdDays >= 0 ? 'D-'+etdDays : '출항완료'}</span>`
+      : '<span class="empty-val">—</span>';
+    const dim = !s.etd && !s.vessel ? 'opacity:0.45' : '';
+    return `<tr style="${dim}">
+      <td>${dTag}</td>
       <td class="fw-600">${o.id}</td>
       <td>${o.product}</td>
       <td>${o.supplier}</td>
       <td>${s.vessel || '<span class="empty-val">미정</span>'}</td>
-      <td>${s.blNo || '<span class="empty-val">—</span>'}</td>
+      <td style="font-size:12px">${s.blNo || '<span class="empty-val">—</span>'}</td>
       <td>${s.portOfLoading}</td>
       <td>${s.portOfDischarge}</td>
       <td>${fmtDate(s.etd)}</td>
@@ -641,39 +717,46 @@ function renderShipment() {
     </tr>`;
   }).join('');
   document.getElementById('shipmentTableBody').innerHTML = rows;
-
-  // Timeline
-  const inTransit = DATA.orders.filter(o => o.shipment.eta && ['선적완료','항해중','통관중'].includes(o.stage));
-  inTransit.sort((a,b) => a.shipment.eta.localeCompare(b.shipment.eta));
-  const tlHtml = inTransit.length ? inTransit.map(o => {
-    const days = Math.ceil((new Date(o.shipment.eta) - new Date('2026-06-11')) / 86400000);
-    const color = days <= 3 ? 'var(--danger)' : days <= 7 ? 'var(--warning)' : 'var(--primary)';
-    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
-      <div style="width:90px;text-align:right;font-weight:600;color:${color}">${o.shipment.eta}</div>
-      <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
-      <div><span class="fw-600">${o.id}</span> · ${o.product} · ${o.supplier} · ${o.quantity}MT</div>
-      <div style="margin-left:auto"><span class="chip">${days >= 0 ? 'D-' + days : '입항완료'}</span></div>
-    </div>`;
-  }).join('') : '<div class="alert alert-info">현재 항해 중인 선박이 없습니다.</div>';
-  document.getElementById('shipmentTimeline').innerHTML = tlHtml;
 }
 
 // ─────────────────────────────────────────
 // CUSTOMS TAB
 // ─────────────────────────────────────────
 function renderCustoms() {
-  const rows = DATA.orders.map(o => {
+  // 상단 스탯
+  const arrived = DATA.orders.filter(o => o.customs.arrivalDate).length;
+  const inClearance = DATA.orders.filter(o => o.customs.status === '진행중').length;
+  const dispatched = DATA.orders.filter(o => o.dispatch.status === '완료').length;
+  document.getElementById('customsStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon" style="background:#dbeafe">⚓</div>
+      <div><div class="stat-label">입항 완료</div><div class="stat-value">${arrived}</div><div class="stat-sub">건</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fef9c3">🏛</div>
+      <div><div class="stat-label">통관 진행중</div><div class="stat-value">${inClearance}</div><div class="stat-sub">건</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">🚛</div>
+      <div><div class="stat-label">배차 완료</div><div class="stat-value">${dispatched}</div><div class="stat-sub">건</div></div></div>
+  `;
+
+  // 통관 진행 중인 건 먼저, 나머지는 입항일 순
+  const sorted = [...DATA.orders].sort((a,b) => {
+    const priority = s => s.customs.status === '진행중' ? 0 : s.customs.arrivalDate ? 1 : 2;
+    return priority(a) - priority(b);
+  });
+
+  const rows = sorted.map(o => {
     const c = o.customs;
     const d = o.dispatch;
-    return `<tr>
+    const cBadgeClass = c.status==='완료' ? 'stage-배차완료' : c.status==='진행중' ? 'stage-통관중' : 'stage-네고중';
+    const dBadgeClass = d.status==='완료' ? 'stage-배차완료' : 'stage-네고중';
+    const rowBg = c.status==='진행중' ? 'background:#fffbeb' : '';
+    return `<tr style="${rowBg}">
       <td class="fw-600">${o.id}</td>
       <td>${o.product}</td>
       <td class="text-right">${o.quantity.toLocaleString()}</td>
       <td>${fmtDate(c.arrivalDate)}</td>
       <td>${fmtDate(c.declarationDate)}</td>
       <td>${fmtDate(c.clearanceDate)}</td>
-      <td>${statusDot(c.status)}<span class="stage-badge stage-${c.status==='완료'?'배차완료':c.status==='진행중'?'통관중':'네고중'}">${c.status}</span></td>
-      <td>${statusDot(d.status)}<span class="stage-badge stage-${d.status==='완료'?'배차완료':'네고중'}">${d.status}</span></td>
+      <td>${statusDot(c.status)}<span class="stage-badge ${cBadgeClass}">${c.status}</span></td>
+      <td>${statusDot(d.status)}<span class="stage-badge ${dBadgeClass}">${d.status}</span></td>
       <td>${fmtDate(d.date)}</td>
       <td>${d.destination || '<span class="empty-val">—</span>'}</td>
     </tr>`;
@@ -686,21 +769,30 @@ function renderCustoms() {
 // ─────────────────────────────────────────
 function renderInventory() {
   const inv = DATA.inventory;
-  const totalStock = inv.reduce((s, i) => s + i.currentStock, 0);
-  const belowSafety = inv.filter(i => i.currentStock < i.safetyStock).length;
-  const totalIncoming = inv.reduce((s, i) => s + i.incomingStock, 0);
-  const totalOutgoing = inv.reduce((s, i) => s + i.outgoingPlan, 0);
 
-  document.getElementById('invStats').innerHTML = `
-    <div class="stat-card"><div class="stat-icon" style="background:#dbeafe">📦</div>
-      <div><div class="stat-label">전체 현재고</div><div class="stat-value">${totalStock.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">📥</div>
-      <div><div class="stat-label">입고 예정</div><div class="stat-value">${totalIncoming.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:#fef3c7">📤</div>
-      <div><div class="stat-label">출고 예정</div><div class="stat-value">${totalOutgoing.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
-    <div class="stat-card"><div class="stat-icon" style="background:${belowSafety>0?'#fee2e2':'#dcfce7'}">${belowSafety>0?'⚠️':'✅'}</div>
-      <div><div class="stat-label">안전재고 미달</div><div class="stat-value" style="color:${belowSafety>0?'var(--danger)':'var(--success)'}">${belowSafety}</div><div class="stat-sub">품목</div></div></div>
-  `;
+  // 품목별 개별 카드 (전체 현재고 제거)
+  const productCards = `<div class="grid-3" style="gap:12px">${inv.map(i => {
+    const belowSafety = i.currentStock < i.safetyStock;
+    const borderColor = belowSafety ? 'var(--danger)' : i.currentStock < i.safetyStock * 1.2 ? 'var(--warning)' : 'var(--gray-200)';
+    const doi = (i.currentStock / i.avgDailyUsage).toFixed(0);
+    return `<div class="stat-card" style="border:2px solid ${borderColor};flex-direction:column;align-items:flex-start;gap:8px">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <span class="fw-600" style="font-size:14px">${i.product}</span>
+        ${belowSafety ? '<span class="stage-badge stage-네고중">⚠️ 안전재고 미달</span>' : '<span class="stage-badge stage-배차완료">정상</span>'}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%;font-size:12px">
+        <div><div style="color:var(--gray-600)">현재고</div><div style="font-size:18px;font-weight:700;color:${belowSafety?'var(--danger)':'var(--gray-800)'}">${i.currentStock}</div><div style="color:var(--gray-600)">MT</div></div>
+        <div><div style="color:var(--gray-600)">안전재고</div><div style="font-size:18px;font-weight:700;color:var(--danger)">${i.safetyStock}</div><div style="color:var(--gray-600)">MT</div></div>
+        <div><div style="color:var(--gray-600)">재고일수</div><div style="font-size:18px;font-weight:700">${doi}</div><div style="color:var(--gray-600)">일</div></div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--gray-600);width:100%">
+        <span>📥 입고예정 <b style="color:var(--success)">${i.incomingStock}MT</b></span>
+        <span>📤 출고예정 <b style="color:var(--warning)">${i.outgoingPlan}MT</b></span>
+        <span style="margin-left:auto">${i.location}</span>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  document.getElementById('invProductCards').innerHTML = productCards;
 
   // Bar visualization
   const maxVal = Math.max(...inv.map(i => Math.max(i.currentStock, i.safetyStock, i.incomingStock)));
