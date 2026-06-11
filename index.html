@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PP/PE 레진 구매 관리 시스템</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #1e40af;
+    --primary-light: #3b82f6;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #0891b2;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-600: #475569;
+    --gray-800: #1e293b;
+    --white: #ffffff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    font-size: 14px;
+  }
+  /* Header */
+  .app-header {
+    background: var(--primary);
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    box-shadow: var(--shadow-md);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .app-header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .header-meta { font-size: 12px; opacity: 0.8; }
+  /* Nav Tabs */
+  .nav-tabs {
+    background: var(--white);
+    border-bottom: 2px solid var(--gray-200);
+    display: flex;
+    padding: 0 24px;
+    overflow-x: auto;
+    gap: 2px;
+    position: sticky; top: 56px; z-index: 99;
+    box-shadow: var(--shadow);
+  }
+  .nav-tab {
+    padding: 14px 18px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-600);
+    white-space: nowrap;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .nav-tab:hover { color: var(--primary); background: var(--gray-50); }
+  .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  .nav-tab .tab-badge {
+    background: var(--primary-light);
+    color: white;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11px;
+  }
+  /* Content */
+  .content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  /* Cards */
+  .card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; gap: 8px;
+  }
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  /* Stat Cards */
+  .stat-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .stat-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .stat-label { font-size: 12px; color: var(--gray-600); }
+  .stat-value { font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .stat-sub { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  /* Stage Badge */
+  .stage-badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .stage-네고중     { background:#fef3c7; color:#92400e; }
+  .stage-계약완료   { background:#e0e7ff; color:#3730a3; }
+  .stage-발주대기   { background:#f3e8ff; color:#6b21a8; }
+  .stage-선적완료   { background:#dbeafe; color:#1e40af; }
+  .stage-항해중     { background:#cffafe; color:#155e75; }
+  .stage-통관중     { background:#fef9c3; color:#854d0e; }
+  .stage-배차완료   { background:#dcfce7; color:#166534; }
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th {
+    background: var(--gray-50);
+    color: var(--gray-600);
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
+  }
+  .tbl td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+  }
+  .tbl tr:hover td { background: var(--gray-50); }
+  .tbl tr:last-child td { border-bottom: none; }
+  /* Progress Stepper */
+  .stepper {
+    display: flex; align-items: center;
+    gap: 0; margin: 6px 0;
+  }
+  .step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1;
+  }
+  .step-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-300);
+    background: var(--white);
+    position: relative; z-index: 1;
+    transition: all 0.2s;
+  }
+  .step-dot.done { background: var(--success); border-color: var(--success); }
+  .step-dot.active { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,64,175,0.2); }
+  .step-label { font-size: 10px; color: var(--gray-600); margin-top: 4px; text-align: center; }
+  .step-line {
+    flex: 1; height: 2px;
+    background: var(--gray-200);
+    margin-top: -10px;
+  }
+  .step-line.done { background: var(--success); }
+  /* Alert */
+  .alert {
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .alert-warning { background: #fffbeb; border-left: 3px solid var(--warning); color: #78350f; }
+  .alert-danger  { background: #fff1f2; border-left: 3px solid var(--danger);  color: #9f1239; }
+  .alert-info    { background: #f0f9ff; border-left: 3px solid var(--info);    color: #0c4a6e; }
+  .alert-success { background: #f0fdf4; border-left: 3px solid var(--success); color: #14532d; }
+  /* Inventory Bar */
+  .inv-bar-wrap { margin: 4px 0 2px; }
+  .inv-bar-track {
+    height: 10px; border-radius: 5px;
+    background: var(--gray-200);
+    position: relative; overflow: visible;
+  }
+  .inv-bar-fill {
+    height: 100%; border-radius: 5px;
+    transition: width 0.4s;
+    position: relative;
+  }
+  .inv-bar-safety {
+    position: absolute; top: -3px; bottom: -3px;
+    width: 2px; background: var(--danger);
+    border-radius: 2px; z-index: 2;
+  }
+  /* Price diff */
+  .price-good { color: var(--success); font-weight: 600; }
+  .price-bad  { color: var(--danger);  font-weight: 600; }
+  /* Util */
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .fw-600 { font-weight: 600; }
+  .mt-16 { margin-top: 16px; }
+  .chip {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px; font-weight: 600;
+    background: var(--gray-100); color: var(--gray-600);
+  }
+  .section-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--gray-800); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .canvas-wrap { position: relative; height: 260px; }
+  /* Order detail expand */
+  .order-row { cursor: pointer; }
+  .order-detail { display: none; background: var(--gray-50); }
+  .order-detail.open { display: table-row; }
+  .order-detail td { padding: 16px 20px !important; }
+  .detail-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+  .detail-block { }
+  .detail-block .lbl { font-size: 11px; color: var(--gray-600); margin-bottom: 3px; }
+  .detail-block .val { font-size: 13px; font-weight: 500; }
+  .empty-val { color: var(--gray-300); }
+  /* Dot indicator */
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  .dot-green { background: var(--success); }
+  .dot-yellow { background: var(--warning); }
+  .dot-red { background: var(--danger); }
+  .dot-blue { background: var(--primary-light); }
+  .dot-gray { background: var(--gray-300); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>🏭 PP/PE 레진 구매 관리 시스템</h1>
+  <div class="header-meta" id="lastUpdatedLabel">로딩 중...</div>
+</header>
+
+<nav class="nav-tabs" id="navTabs">
+  <div class="nav-tab active" onclick="switchTab('dashboard',this)">📊 대시보드</div>
+  <div class="nav-tab" onclick="switchTab('nego',this)">💬 단가 네고 <span class="tab-badge" id="badge-nego">0</span></div>
+  <div class="nav-tab" onclick="switchTab('contract',this)">📝 계약 관리</div>
+  <div class="nav-tab" onclick="switchTab('shipment',this)">🚢 선적·운송</div>
+  <div class="nav-tab" onclick="switchTab('customs',this)">🏛 통관·배차</div>
+  <div class="nav-tab" onclick="switchTab('inventory',this)">📦 재고 현황</div>
+  <div class="nav-tab" onclick="switchTab('history',this)">📈 품목 이력</div>
+</nav>
+
+<div class="content">
+
+<!-- ===================== TAB 1: DASHBOARD ===================== -->
+<div class="tab-panel active" id="tab-dashboard">
+  <div class="grid-4" id="dashStats" style="margin-bottom:16px"></div>
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">⚠️ 긴급 알림</div>
+        <div id="dashAlerts"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 전체 오더 진행 현황</div>
+        <div class="canvas-wrap"><canvas id="chartStage"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">🔄 오더별 진행 단계</div>
+        <div id="dashOrderFlow"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 2: NEGO ===================== -->
+<div class="tab-panel" id="tab-nego">
+  <div class="card">
+    <div class="card-title">💬 단가 네고 현황</div>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>오더번호</th><th>품목</th><th>공급사</th><th>수량(MT)</th>
+        <th>오퍼가</th><th>카운터가</th><th>계약가</th><th>시장가(ICIS)</th><th>절감액</th><th>상태</th>
+      </tr></thead>
+      <tbody id="negoTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">📊 공급사 오퍼 vs 계약가 비교</div>
+    <div class="canvas-wrap"><canvas id="chartNego"></canvas></div>
+  </div>
+</div>
+
+<!-- ===================== TAB 3: CONTRACT ===================== -->
+<div class="tab-panel" id="tab-contract">
+  <div class="card">
+    <div class="card-title">📝 계약 현황</div>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>계약번호</th><th>품목/등급</th><th>공급사</th><th>수량(MT)</th>
+        <th>계약가(USD/MT)</th><th>결제조건</th><th>인도조건</th><th>납기월</th><th>계약일</th><th>진행단계</th>
+      </tr></thead>
+      <tbody id="contractTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 4: SHIPMENT ===================== -->
+<div class="tab-panel" id="tab-shipment">
+  <div class="card">
+    <div class="card-title">🚢 선적·운송 현황</div>
+    <div style="overflow-x:auto">
+    <table class="tbl" id="shipmentTable">
+      <thead><tr>
+        <th>오더번호</th><th>품목</th><th>공급사</th><th>선박명</th>
+        <th>B/L No.</th><th>선적항</th><th>도착항</th><th>ETD</th><th>ETA</th><th>상태</th>
+      </tr></thead>
+      <tbody id="shipmentTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">🗓 입항 일정 타임라인</div>
+    <div id="shipmentTimeline"></div>
+  </div>
+</div>
+
+<!-- ===================== TAB 5: CUSTOMS ===================== -->
+<div class="tab-panel" id="tab-customs">
+  <div class="card">
+    <div class="card-title">🏛 통관·배차 현황</div>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>오더번호</th><th>품목</th><th>수량(MT)</th>
+        <th>입항일</th><th>신고일</th><th>통관완료일</th><th>통관상태</th>
+        <th>배차상태</th><th>배차일</th><th>목적지</th>
+      </tr></thead>
+      <tbody id="customsTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 6: INVENTORY ===================== -->
+<div class="tab-panel" id="tab-inventory">
+  <div class="grid-4" id="invStats" style="margin-bottom:16px"></div>
+  <div class="card">
+    <div class="card-title">📦 품목별 재고 현황 (빨간선 = 안전재고 기준)</div>
+    <div id="invList"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📊 현재고 vs 안전재고</div>
+      <div class="canvas-wrap"><canvas id="chartInvBar"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📥 입고 예정 vs 출고 예정</div>
+      <div class="canvas-wrap"><canvas id="chartInvFlow"></canvas></div>
+    </div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">📋 재고 상세 테이블</div>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>품목</th><th>창고</th><th>현재고(MT)</th><th>안전재고(MT)</th>
+        <th>입고예정(MT)</th><th>출고예정(MT)</th><th>재고 후 예상(MT)</th>
+        <th>일평균사용(MT)</th><th>재고일수(DOI)</th><th>안전재고 대비</th>
+      </tr></thead>
+      <tbody id="invTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 7: HISTORY ===================== -->
+<div class="tab-panel" id="tab-history">
+  <div class="card">
+    <div class="card-title">📈 월별 시장가 추이 (USD/MT)</div>
+    <div class="canvas-wrap" style="height:300px"><canvas id="chartHistory"></canvas></div>
+  </div>
+  <div class="card mt-16">
+    <div class="card-title">📋 오더 이력 전체</div>
+    <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr>
+        <th>오더번호</th><th>품목</th><th>등급</th><th>공급사</th><th>원산지</th>
+        <th>수량(MT)</th><th>계약가</th><th>시장가</th><th>절감율</th><th>계약일</th><th>단계</th>
+      </tr></thead>
+      <tbody id="historyTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+// ─────────────────────────────────────────
+// DATA LOAD
+// ─────────────────────────────────────────
+let DATA = null;
+
+async function loadData() {
+  try {
+    const res = await fetch('data/data.json?t=' + Date.now());
+    DATA = await res.json();
+    init();
+  } catch(e) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#dc2626"><h2>⚠️ data/data.json 파일을 불러올 수 없습니다.</h2><p style="margin-top:8px;color:#666">로컬 파일 서버에서 열어주세요 (파이썬: python -m http.server 8080)</p></div>';
+  }
+}
+
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+const STAGE_ORDER = ['네고중','계약완료','발주대기','선적완료','항해중','통관중','배차완료'];
+const STAGE_ICONS = { '네고중':'💬','계약완료':'📝','발주대기':'📦','선적완료':'🚢','항해중':'⛵','통관중':'🏛','배차완료':'✅' };
+
+function stageIndex(s) { return STAGE_ORDER.indexOf(s); }
+function fmt(v, unit='') { return v != null && v !== '' ? v + unit : '<span class="empty-val">—</span>'; }
+function fmtDate(d) { return d || '<span class="empty-val">—</span>'; }
+function fmtPrice(v) { return v != null ? '$' + v.toLocaleString() : '<span class="empty-val">—</span>'; }
+
+function statusDot(status) {
+  if(status==='완료') return '<span class="dot dot-green"></span>';
+  if(status==='진행중') return '<span class="dot dot-yellow"></span>';
+  if(status==='대기중') return '<span class="dot dot-gray"></span>';
+  return '';
+}
+
+// ─────────────────────────────────────────
+// TAB SWITCH
+// ─────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ─────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────
+function renderDashboard() {
+  const orders = DATA.orders;
+  const stageCounts = {};
+  STAGE_ORDER.forEach(s => stageCounts[s] = 0);
+  orders.forEach(o => { if(stageCounts[o.stage] !== undefined) stageCounts[o.stage]++; });
+
+  const inProgress = orders.filter(o => o.stage !== '배차완료').length;
+  const done = orders.filter(o => o.stage === '배차완료').length;
+  const nego = orders.filter(o => o.stage === '네고중').length;
+  const transit = orders.filter(o => ['선적완료','항해중'].includes(o.stage)).length;
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon" style="background:#e0e7ff">📋</div>
+      <div><div class="stat-label">전체 오더</div><div class="stat-value">${orders.length}</div><div class="stat-sub">건</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fef3c7">💬</div>
+      <div><div class="stat-label">네고 진행중</div><div class="stat-value">${nego}</div><div class="stat-sub">건</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#cffafe">⛵</div>
+      <div><div class="stat-label">해상 운송중</div><div class="stat-value">${transit}</div><div class="stat-sub">건</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">✅</div>
+      <div><div class="stat-label">배차 완료</div><div class="stat-value">${done}</div><div class="stat-sub">건</div></div></div>
+  `;
+
+  // Alerts
+  const alerts = [];
+  DATA.inventory.forEach(inv => {
+    if(inv.currentStock < inv.safetyStock) {
+      alerts.push({ type:'danger', msg:`⚠️ <b>${inv.product}</b> 현재고(${inv.currentStock}MT)가 안전재고(${inv.safetyStock}MT) 미달입니다.` });
+    }
+  });
+  orders.forEach(o => {
+    if(o.stage === '항해중' && o.shipment.eta) {
+      const days = Math.ceil((new Date(o.shipment.eta) - new Date('2026-06-11')) / 86400000);
+      if(days <= 7 && days >= 0) {
+        alerts.push({ type:'info', msg:`🚢 <b>${o.id}</b> (${o.product}) ETA ${o.shipment.eta} — ${days}일 후 입항 예정` });
+      }
+    }
+    if(o.stage === '통관중') {
+      alerts.push({ type:'warning', msg:`🏛 <b>${o.id}</b> (${o.product}) 통관 진행 중 — 완료 확인 필요` });
+    }
+  });
+  if(!alerts.length) alerts.push({ type:'success', msg:'✅ 현재 긴급 알림이 없습니다.' });
+
+  document.getElementById('dashAlerts').innerHTML = alerts.map(a =>
+    `<div class="alert alert-${a.type}">${a.msg}</div>`
+  ).join('');
+
+  // Order flow stepper
+  const flowHtml = orders.map(o => {
+    const si = stageIndex(o.stage);
+    const steps = STAGE_ORDER.map((s, i) => {
+      const cls = i < si ? 'done' : i === si ? 'active' : '';
+      return `<div class="step"><div class="step-dot ${cls}"></div><div class="step-label">${s}</div></div>` +
+             (i < STAGE_ORDER.length-1 ? `<div class="step-line ${i < si ? 'done' : ''}"></div>` : '');
+    }).join('');
+    return `<div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="fw-600">${o.id}</span>
+        <span>${o.product} · ${o.supplier} · ${o.quantity}MT</span>
+        <span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span>
+      </div>
+      <div class="stepper">${steps}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('dashOrderFlow').innerHTML = flowHtml;
+
+  // Stage donut chart
+  const ctx = document.getElementById('chartStage').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: STAGE_ORDER.map(s => STAGE_ICONS[s] + ' ' + s),
+      datasets: [{
+        data: STAGE_ORDER.map(s => stageCounts[s]),
+        backgroundColor: ['#fef3c7','#e0e7ff','#f3e8ff','#dbeafe','#cffafe','#fef9c3','#dcfce7'],
+        borderColor: ['#f59e0b','#818cf8','#a855f7','#3b82f6','#22d3ee','#eab308','#22c55e'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { size: 12 } } } },
+      cutout: '55%'
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+// NEGO TAB
+// ─────────────────────────────────────────
+function renderNego() {
+  const rows = DATA.orders.map(o => {
+    const n = o.negotiation;
+    const saving = n.offerPrice && n.contractPrice ? n.offerPrice - n.contractPrice : null;
+    const savingPct = saving ? ((saving / n.offerPrice)*100).toFixed(1) : null;
+    const vsMkt = n.contractPrice && n.marketRef ? n.contractPrice - n.marketRef : null;
+    return `<tr>
+      <td class="fw-600">${o.id}</td>
+      <td>${o.product} <span class="chip">${o.grade}</span></td>
+      <td>${o.supplier}</td>
+      <td class="text-right">${o.quantity.toLocaleString()}</td>
+      <td class="text-right">${fmtPrice(n.offerPrice)}</td>
+      <td class="text-right">${fmtPrice(n.counterPrice)}</td>
+      <td class="text-right fw-600">${fmtPrice(n.contractPrice)}</td>
+      <td class="text-right">${fmtPrice(n.marketRef)}</td>
+      <td class="text-right">${saving != null ? `<span class="${saving>0?'price-good':'price-bad'}">-$${saving} (${savingPct}%)</span>` : '—'}</td>
+      <td><span class="stage-badge stage-${o.stage}">${o.negotiation.status}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('negoTableBody').innerHTML = rows;
+
+  // Badge
+  const active = DATA.orders.filter(o => o.negotiation.status === '진행중').length;
+  document.getElementById('badge-nego').textContent = active;
+
+  // Chart
+  const labels = DATA.orders.map(o => o.product + '\n' + o.id);
+  const ctx = document.getElementById('chartNego').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DATA.orders.map(o => o.product),
+      datasets: [
+        { label: '오퍼가', data: DATA.orders.map(o => o.negotiation.offerPrice), backgroundColor: 'rgba(239,68,68,0.6)', borderColor: '#ef4444', borderWidth: 1 },
+        { label: '카운터가', data: DATA.orders.map(o => o.negotiation.counterPrice), backgroundColor: 'rgba(251,146,60,0.6)', borderColor: '#f97316', borderWidth: 1 },
+        { label: '계약가', data: DATA.orders.map(o => o.negotiation.contractPrice), backgroundColor: 'rgba(34,197,94,0.6)', borderColor: '#22c55e', borderWidth: 1 },
+        { label: 'ICIS 시장가', data: DATA.orders.map(o => o.negotiation.marketRef), backgroundColor: 'rgba(99,102,241,0.6)', borderColor: '#6366f1', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: false, title: { display: true, text: 'USD/MT' } } }
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+// CONTRACT TAB
+// ─────────────────────────────────────────
+function renderContract() {
+  const rows = DATA.orders.map(o => {
+    const c = o.contract;
+    return `<tr>
+      <td class="fw-600">${c.contractNo || '<span class="empty-val">미정</span>'}</td>
+      <td>${o.product} <span class="chip">${o.grade}</span></td>
+      <td>${o.supplier}</td>
+      <td class="text-right">${o.quantity.toLocaleString()}</td>
+      <td class="text-right fw-600">${fmtPrice(o.negotiation.contractPrice)}</td>
+      <td>${c.paymentTerms || '<span class="empty-val">—</span>'}</td>
+      <td>${c.incoterms || '<span class="empty-val">—</span>'}</td>
+      <td>${c.deliveryMonth || '<span class="empty-val">—</span>'}</td>
+      <td>${fmtDate(c.signDate)}</td>
+      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('contractTableBody').innerHTML = rows;
+}
+
+// ─────────────────────────────────────────
+// SHIPMENT TAB
+// ─────────────────────────────────────────
+function renderShipment() {
+  const rows = DATA.orders.map(o => {
+    const s = o.shipment;
+    const stageStyle = ['선적완료','항해중','통관중','배차완료'].includes(o.stage) ? '' : 'opacity:0.5';
+    return `<tr style="${stageStyle}">
+      <td class="fw-600">${o.id}</td>
+      <td>${o.product}</td>
+      <td>${o.supplier}</td>
+      <td>${s.vessel || '<span class="empty-val">미정</span>'}</td>
+      <td>${s.blNo || '<span class="empty-val">—</span>'}</td>
+      <td>${s.portOfLoading}</td>
+      <td>${s.portOfDischarge}</td>
+      <td>${fmtDate(s.etd)}</td>
+      <td class="fw-600">${fmtDate(s.eta)}</td>
+      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('shipmentTableBody').innerHTML = rows;
+
+  // Timeline
+  const inTransit = DATA.orders.filter(o => o.shipment.eta && ['선적완료','항해중','통관중'].includes(o.stage));
+  inTransit.sort((a,b) => a.shipment.eta.localeCompare(b.shipment.eta));
+  const tlHtml = inTransit.length ? inTransit.map(o => {
+    const days = Math.ceil((new Date(o.shipment.eta) - new Date('2026-06-11')) / 86400000);
+    const color = days <= 3 ? 'var(--danger)' : days <= 7 ? 'var(--warning)' : 'var(--primary)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+      <div style="width:90px;text-align:right;font-weight:600;color:${color}">${o.shipment.eta}</div>
+      <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+      <div><span class="fw-600">${o.id}</span> · ${o.product} · ${o.supplier} · ${o.quantity}MT</div>
+      <div style="margin-left:auto"><span class="chip">${days >= 0 ? 'D-' + days : '입항완료'}</span></div>
+    </div>`;
+  }).join('') : '<div class="alert alert-info">현재 항해 중인 선박이 없습니다.</div>';
+  document.getElementById('shipmentTimeline').innerHTML = tlHtml;
+}
+
+// ─────────────────────────────────────────
+// CUSTOMS TAB
+// ─────────────────────────────────────────
+function renderCustoms() {
+  const rows = DATA.orders.map(o => {
+    const c = o.customs;
+    const d = o.dispatch;
+    return `<tr>
+      <td class="fw-600">${o.id}</td>
+      <td>${o.product}</td>
+      <td class="text-right">${o.quantity.toLocaleString()}</td>
+      <td>${fmtDate(c.arrivalDate)}</td>
+      <td>${fmtDate(c.declarationDate)}</td>
+      <td>${fmtDate(c.clearanceDate)}</td>
+      <td>${statusDot(c.status)}<span class="stage-badge stage-${c.status==='완료'?'배차완료':c.status==='진행중'?'통관중':'네고중'}">${c.status}</span></td>
+      <td>${statusDot(d.status)}<span class="stage-badge stage-${d.status==='완료'?'배차완료':'네고중'}">${d.status}</span></td>
+      <td>${fmtDate(d.date)}</td>
+      <td>${d.destination || '<span class="empty-val">—</span>'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('customsTableBody').innerHTML = rows;
+}
+
+// ─────────────────────────────────────────
+// INVENTORY TAB
+// ─────────────────────────────────────────
+function renderInventory() {
+  const inv = DATA.inventory;
+  const totalStock = inv.reduce((s, i) => s + i.currentStock, 0);
+  const belowSafety = inv.filter(i => i.currentStock < i.safetyStock).length;
+  const totalIncoming = inv.reduce((s, i) => s + i.incomingStock, 0);
+  const totalOutgoing = inv.reduce((s, i) => s + i.outgoingPlan, 0);
+
+  document.getElementById('invStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon" style="background:#dbeafe">📦</div>
+      <div><div class="stat-label">전체 현재고</div><div class="stat-value">${totalStock.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#dcfce7">📥</div>
+      <div><div class="stat-label">입고 예정</div><div class="stat-value">${totalIncoming.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:#fef3c7">📤</div>
+      <div><div class="stat-label">출고 예정</div><div class="stat-value">${totalOutgoing.toLocaleString()}</div><div class="stat-sub">MT</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:${belowSafety>0?'#fee2e2':'#dcfce7'}">${belowSafety>0?'⚠️':'✅'}</div>
+      <div><div class="stat-label">안전재고 미달</div><div class="stat-value" style="color:${belowSafety>0?'var(--danger)':'var(--success)'}">${belowSafety}</div><div class="stat-sub">품목</div></div></div>
+  `;
+
+  // Bar visualization
+  const maxVal = Math.max(...inv.map(i => Math.max(i.currentStock, i.safetyStock, i.incomingStock)));
+  const listHtml = inv.map(i => {
+    const pct = Math.min((i.currentStock / maxVal) * 100, 100);
+    const safetyPct = Math.min((i.safetyStock / maxVal) * 100, 100);
+    const barColor = i.currentStock < i.safetyStock ? 'var(--danger)' : i.currentStock < i.safetyStock * 1.2 ? 'var(--warning)' : 'var(--primary-light)';
+    const doi = (i.currentStock / i.avgDailyUsage).toFixed(0);
+    return `<div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span class="fw-600">${i.product}</span>
+        <span style="font-size:12px;color:var(--gray-600)">${i.location}</span>
+        <span style="font-size:13px"><b style="color:${barColor}">${i.currentStock.toLocaleString()} MT</b> <span style="color:var(--gray-600)">/ 안전재고 ${i.safetyStock} MT · DOI ${doi}일</span></span>
+      </div>
+      <div class="inv-bar-track">
+        <div class="inv-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+        <div class="inv-bar-safety" style="left:${safetyPct}%" title="안전재고 ${i.safetyStock}MT"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:5px;font-size:11px;color:var(--gray-600)">
+        <span>📥 입고예정 <b>${i.incomingStock}MT</b></span>
+        <span>📤 출고예정 <b>${i.outgoingPlan}MT</b></span>
+        <span>🔮 예상잔고 <b>${(i.currentStock + i.incomingStock - i.outgoingPlan).toLocaleString()}MT</b></span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('invList').innerHTML = listHtml;
+
+  // Chart: current vs safety
+  const ctx1 = document.getElementById('chartInvBar').getContext('2d');
+  new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: inv.map(i => i.product),
+      datasets: [
+        { label: '현재고', data: inv.map(i => i.currentStock), backgroundColor: inv.map(i => i.currentStock < i.safetyStock ? 'rgba(239,68,68,0.7)' : 'rgba(59,130,246,0.7)'), borderWidth: 1 },
+        { label: '안전재고', data: inv.map(i => i.safetyStock), backgroundColor: 'rgba(239,68,68,0.15)', borderColor: '#ef4444', borderWidth: 2, type: 'line', pointStyle: 'dash' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'MT' } } }
+    }
+  });
+
+  // Chart: incoming vs outgoing
+  const ctx2 = document.getElementById('chartInvFlow').getContext('2d');
+  new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: inv.map(i => i.product),
+      datasets: [
+        { label: '입고 예정', data: inv.map(i => i.incomingStock), backgroundColor: 'rgba(34,197,94,0.7)', borderWidth: 1 },
+        { label: '출고 예정', data: inv.map(i => i.outgoingPlan), backgroundColor: 'rgba(251,146,60,0.7)', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'MT' } } }
+    }
+  });
+
+  // Table
+  const rows = inv.map(i => {
+    const projected = i.currentStock + i.incomingStock - i.outgoingPlan;
+    const doi = (i.currentStock / i.avgDailyUsage).toFixed(1);
+    const diff = i.currentStock - i.safetyStock;
+    return `<tr>
+      <td class="fw-600">${i.product}</td>
+      <td>${i.location}</td>
+      <td class="text-right fw-600" style="color:${i.currentStock<i.safetyStock?'var(--danger)':'inherit'}">${i.currentStock.toLocaleString()}</td>
+      <td class="text-right">${i.safetyStock.toLocaleString()}</td>
+      <td class="text-right" style="color:var(--success)">${i.incomingStock.toLocaleString()}</td>
+      <td class="text-right" style="color:var(--warning)">${i.outgoingPlan.toLocaleString()}</td>
+      <td class="text-right fw-600">${projected.toLocaleString()}</td>
+      <td class="text-right">${i.avgDailyUsage}</td>
+      <td class="text-right">${doi}일</td>
+      <td class="text-right"><span class="${diff>=0?'price-good':'price-bad'}">${diff>=0?'+':''}${diff}MT</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('invTableBody').innerHTML = rows;
+}
+
+// ─────────────────────────────────────────
+// HISTORY TAB
+// ─────────────────────────────────────────
+function renderHistory() {
+  const mp = DATA.marketPrices;
+  const ctx = document.getElementById('chartHistory').getContext('2d');
+  const colors = { ppHomo:'#3b82f6', ppCopo:'#8b5cf6', hdpe:'#22c55e', ldpe:'#f59e0b', lldpe:'#ef4444', naphtha:'#6b7280', brent:'#0891b2' };
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: mp.map(m => m.month),
+      datasets: [
+        { label: 'PP Homo', data: mp.map(m => m.ppHomo), borderColor: colors.ppHomo, backgroundColor: colors.ppHomo+'20', tension: 0.3, fill: false },
+        { label: 'PP Copo', data: mp.map(m => m.ppCopo), borderColor: colors.ppCopo, backgroundColor: colors.ppCopo+'20', tension: 0.3, fill: false },
+        { label: 'HDPE',    data: mp.map(m => m.hdpe),   borderColor: colors.hdpe,   backgroundColor: colors.hdpe+'20',   tension: 0.3, fill: false },
+        { label: 'LDPE',    data: mp.map(m => m.ldpe),   borderColor: colors.ldpe,   backgroundColor: colors.ldpe+'20',   tension: 0.3, fill: false },
+        { label: 'LLDPE',   data: mp.map(m => m.lldpe),  borderColor: colors.lldpe,  backgroundColor: colors.lldpe+'20',  tension: 0.3, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { title: { display: true, text: 'USD/MT' } } }
+    }
+  });
+
+  const rows = DATA.orders.map(o => {
+    const n = o.negotiation;
+    const savingPct = n.contractPrice && n.offerPrice ? (((n.offerPrice - n.contractPrice) / n.offerPrice)*100).toFixed(1) : null;
+    return `<tr>
+      <td class="fw-600">${o.id}</td>
+      <td>${o.product}</td>
+      <td><span class="chip">${o.grade}</span></td>
+      <td>${o.supplier}</td>
+      <td>${o.origin}</td>
+      <td class="text-right">${o.quantity.toLocaleString()}</td>
+      <td class="text-right">${fmtPrice(n.contractPrice)}</td>
+      <td class="text-right">${fmtPrice(n.marketRef)}</td>
+      <td class="text-right">${savingPct != null ? `<span class="price-good">-${savingPct}%</span>` : '—'}</td>
+      <td>${fmtDate(o.contract.signDate)}</td>
+      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('historyTableBody').innerHTML = rows;
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+function init() {
+  document.getElementById('lastUpdatedLabel').textContent = '최종 업데이트: ' + DATA.lastUpdated;
+  renderDashboard();
+  renderNego();
+  renderContract();
+  renderShipment();
+  renderCustoms();
+  renderInventory();
+  renderHistory();
+}
+
+loadData();
+</script>
+</body>
+</html>
