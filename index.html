@@ -419,6 +419,7 @@
 // DATA LOAD
 // ─────────────────────────────────────────
 let DATA = null;
+const CHARTS = {};
 
 async function loadData() {
   try {
@@ -436,10 +437,13 @@ async function loadData() {
 const STAGE_ORDER = ['네고중','계약완료','발주대기','선적완료','항해중','통관중','배차완료'];
 const STAGE_ICONS = { '네고중':'💬','계약완료':'📝','발주대기':'📦','선적완료':'🚢','항해중':'⛵','통관중':'🏛','배차완료':'✅' };
 
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+
 function stageIndex(s) { return STAGE_ORDER.indexOf(s); }
 function fmt(v, unit='') { return v != null && v !== '' ? v + unit : '<span class="empty-val">—</span>'; }
 function fmtDate(d) { return d || '<span class="empty-val">—</span>'; }
 function fmtPrice(v) { return v != null ? '$' + v.toLocaleString() : '<span class="empty-val">—</span>'; }
+function safeStage(s) { return STAGE_ORDER.includes(s) ? s : '네고중'; }
 
 function statusDot(status) {
   if(status==='완료') return '<span class="dot dot-green"></span>';
@@ -492,8 +496,8 @@ function renderDashboard() {
   });
   orders.forEach(o => {
     if(o.stage === '항해중' && o.shipment.eta) {
-      const days = Math.ceil((new Date(o.shipment.eta) - new Date('2026-06-11')) / 86400000);
-      if(days <= 7 && days >= 0) {
+      const days = Math.ceil((new Date(o.shipment.eta) - TODAY) / 86400000);
+      if(days <= 14 && days >= 0) {
         alerts.push({ type:'info', msg:`🚢 <b>${o.id}</b> (${o.product}) ETA ${o.shipment.eta} — ${days}일 후 입항 예정` });
       }
     }
@@ -519,7 +523,7 @@ function renderDashboard() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span class="fw-600">${o.id}</span>
         <span>${o.product} · ${o.supplier} · ${o.quantity}MT</span>
-        <span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span>
+        <span class="stage-badge stage-${safeStage(o.stage)}">${STAGE_ICONS[safeStage(o.stage)]} ${o.stage}</span>
       </div>
       <div class="stepper">${steps}</div>
     </div>`;
@@ -585,8 +589,9 @@ function renderNego() {
   document.getElementById('badge-nego').textContent = active;
 
   // 3) 차트
+  if(CHARTS.nego) CHARTS.nego.destroy();
   const ctx = document.getElementById('chartNego').getContext('2d');
-  new Chart(ctx, {
+  CHARTS.nego = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: DATA.orders.map(o => o.product + ' (' + o.id + ')'),
@@ -659,7 +664,6 @@ function renderContract() {
 // SHIPMENT TAB
 // ─────────────────────────────────────────
 function renderShipment() {
-  const TODAY = new Date('2026-06-11');
 
   // 1) 통관 임박 섹션 (ETA 14일 이내, 항해중·선적완료)
   const urgent = DATA.orders
@@ -821,8 +825,9 @@ function renderInventory() {
   document.getElementById('invList').innerHTML = listHtml;
 
   // Chart: current vs safety
+  if(CHARTS.invBar) CHARTS.invBar.destroy();
   const ctx1 = document.getElementById('chartInvBar').getContext('2d');
-  new Chart(ctx1, {
+  CHARTS.invBar = new Chart(ctx1, {
     type: 'bar',
     data: {
       labels: inv.map(i => i.product),
@@ -839,8 +844,9 @@ function renderInventory() {
   });
 
   // Chart: incoming vs outgoing
+  if(CHARTS.invFlow) CHARTS.invFlow.destroy();
   const ctx2 = document.getElementById('chartInvFlow').getContext('2d');
-  new Chart(ctx2, {
+  CHARTS.invFlow = new Chart(ctx2, {
     type: 'bar',
     data: {
       labels: inv.map(i => i.product),
@@ -882,9 +888,10 @@ function renderInventory() {
 // ─────────────────────────────────────────
 function renderHistory() {
   const mp = DATA.marketPrices;
+  if(CHARTS.history) CHARTS.history.destroy();
   const ctx = document.getElementById('chartHistory').getContext('2d');
   const colors = { ppHomo:'#3b82f6', ppCopo:'#8b5cf6', hdpe:'#22c55e', ldpe:'#f59e0b', lldpe:'#ef4444', naphtha:'#6b7280', brent:'#0891b2' };
-  new Chart(ctx, {
+  CHARTS.history = new Chart(ctx, {
     type: 'line',
     data: {
       labels: mp.map(m => m.month),
