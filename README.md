@@ -11,6 +11,11 @@
 index.html          ← 대시보드 메인 (브라우저에서 바로 열기)
 data/
   data.json         ← 전체 데이터 (오더·재고·시장가)
+skills/
+  briefing-improver.md  ← 품질 개선 자동화 스킬 (issue-writer → issue-runner → doc-optimizer)
+  issue-writer.md       ← 약점 발견 → GitHub 이슈 등록
+  issue-runner.md       ← 이슈 → 코드 수정 → 이슈 종료
+  doc-optimizer.md      ← 문서 검토 및 개선
 README.md           ← 이 파일
 ```
 
@@ -52,10 +57,15 @@ Live Server 확장 설치 후 `index.html` 우클릭 → **Open with Live Server
 ### 오더 추가/수정
 `data/data.json` 파일의 `orders` 배열에 항목을 추가하거나 수정합니다.
 
-**오더 단계값 (stage):**
+**오더 단계값 (stage) — 아래 값만 사용 가능, 오타 주의:**
 ```
 네고중 → 계약완료 → 발주대기 → 선적완료 → 항해중 → 통관중 → 배차완료
 ```
+> ⚠️ 위 7개 값 외의 문자열을 입력하면 단계 뱃지 색상이 표시되지 않습니다.
+
+**negotiation.status 허용값:** `진행중` / `완료`
+
+**customs.status / dispatch.status 허용값:** `대기중` / `진행중` / `완료`
 
 **오더 구조 예시:**
 ```json
@@ -138,6 +148,9 @@ Live Server 확장 설치 후 `index.html` 우클릭 → **Open with Live Server
 4. `index.html`을 새로고침하면 변경 내용 반영
 
 > `index.html`은 수정할 필요 없습니다. 데이터만 `data.json`에서 관리합니다.
+
+> ⚠️ **동시 편집 주의**: 3명이 같은 시간에 수정하면 GitHub에서 충돌이 발생할 수 있습니다.  
+> 수정 전 항상 최신 버전을 확인하고, 한 명이 commit한 뒤 다음 사람이 편집하세요.
 
 ---
 
