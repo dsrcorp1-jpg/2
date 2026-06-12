@@ -11,11 +11,20 @@
 index.html          ← 대시보드 메인 (브라우저에서 바로 열기)
 data/
   data.json         ← 전체 데이터 (오더·재고·시장가)
+.claude/
+  settings.json     ← 에이전트 팀 설정 + PostToolUse 훅 (data.json stage 자동 검증)
+  agents/
+    resin-data-validator.md  ← 데이터 검증 전용 에이전트 (읽기 전용)
+    dashboard-dev.md         ← HTML/JS 개발 전담 에이전트
+    doc-reviewer.md          ← 문서 품질 검토 에이전트 (읽기 전용)
+  hooks/
+    validate-stage.ps1       ← data.json 저장 시 stage 값 자동 차단 훅
 skills/
   briefing-improver.md  ← 품질 개선 자동화 스킬 (issue-writer → issue-runner → doc-optimizer)
   issue-writer.md       ← 약점 발견 → GitHub 이슈 등록
   issue-runner.md       ← 이슈 → 코드 수정 → 이슈 종료
   doc-optimizer.md      ← 문서 검토 및 개선
+  data-update.md        ← 오더·재고 데이터 입력 가이드 + 템플릿
 README.md           ← 이 파일
 ```
 
@@ -137,6 +146,22 @@ Live Server 확장 설치 후 `index.html` 우클릭 → **Open with Live Server
 ```json
 { "lastUpdated": "2026-06-11", ... }
 ```
+
+---
+
+## 에이전트 활용 (Claude Code)
+
+Claude Code를 사용하는 경우 아래 에이전트와 스킬을 활용할 수 있습니다.
+
+| 에이전트/스킬 | 호출 방법 | 용도 |
+|-------------|----------|------|
+| `resin-data-validator` | "데이터 검증해줘" | data.json stage·날짜·필드 자동 검증 |
+| `dashboard-dev` | "dashboard-dev로 고쳐줘" | index.html 버그 수정 및 기능 추가 |
+| `doc-reviewer` | "문서 검토해줘" | README·CLAUDE.md 품질 점검 |
+| `data-update` 스킬 | "data-update 스킬 써줘" | 오더/재고 입력 가이드 + 템플릿 제공 |
+| `briefing-improver` 스킬 | "briefing-improver" | 버그 발견 → 수정 → 문서화 전체 자동화 |
+
+> `data.json` 저장 시 허용되지 않는 stage 값이 있으면 훅이 자동으로 차단합니다.
 
 ---
 
