@@ -579,7 +579,7 @@ function renderNego() {
       <td class="text-right fw-600">${fmtPrice(n.contractPrice)}</td>
       <td class="text-right">${fmtPrice(n.marketRef)}</td>
       <td class="text-right">${saving != null ? `<span class="${saving>0?'price-good':'price-bad'}">-$${saving} (${savingPct}%)</span>` : '—'}</td>
-      <td><span class="stage-badge stage-${o.stage}">${o.negotiation.status}</span></td>
+      <td><span class="stage-badge stage-${safeStage(o.stage)}">${o.negotiation.status}</span></td>
     </tr>`;
   }).join('');
   document.getElementById('negoTableBody').innerHTML = rows;
@@ -598,7 +598,7 @@ function renderNego() {
       datasets: [
         { label: '오퍼가', data: DATA.orders.map(o => o.negotiation.offerPrice), backgroundColor: 'rgba(239,68,68,0.6)', borderColor: '#ef4444', borderWidth: 1 },
         { label: '카운터가', data: DATA.orders.map(o => o.negotiation.counterPrice), backgroundColor: 'rgba(251,146,60,0.6)', borderColor: '#f97316', borderWidth: 1 },
-        { label: '계약가', data: DATA.orders.map(o => o.negotiation.contractPrice), backgroundColor: 'rgba(34,197,94,0.6)', borderColor: '#22c55e', borderWidth: 1 },
+        { label: '계약가', data: DATA.orders.map(o => o.negotiation.contractPrice ?? null), backgroundColor: 'rgba(34,197,94,0.6)', borderColor: '#22c55e', borderWidth: 1, spanGaps: false },
         { label: 'ICIS 시장가', data: DATA.orders.map(o => o.negotiation.marketRef), backgroundColor: 'rgba(99,102,241,0.6)', borderColor: '#6366f1', borderWidth: 1 }
       ]
     },
@@ -654,7 +654,7 @@ function renderContract() {
       <td>${c.incoterms || '<span class="empty-val">—</span>'}</td>
       <td>${c.deliveryMonth || '<span class="empty-val">—</span>'}</td>
       <td>${fmtDate(c.signDate)}</td>
-      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+      <td><span class="stage-badge stage-${safeStage(o.stage)}">${STAGE_ICONS[safeStage(o.stage)]} ${o.stage}</span></td>
     </tr>`;
   }).join('');
   document.getElementById('contractTableBody').innerHTML = rows;
@@ -686,7 +686,7 @@ function renderShipment() {
         <div>ETD <b>${o.shipment.etd}</b></div>
         <div style="color:${color}">ETA <b>${o.shipment.eta}</b></div>
       </div>
-      <span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span>
+      <span class="stage-badge stage-${safeStage(o.stage)}">${STAGE_ICONS[safeStage(o.stage)]} ${o.stage}</span>
     </div>`;
   }).join('') : '<div class="alert alert-success">✅ 14일 내 입항 예정 건이 없습니다.</div>';
   document.getElementById('shipmentUrgent').innerHTML = urgentHtml;
@@ -717,7 +717,7 @@ function renderShipment() {
       <td>${s.portOfDischarge}</td>
       <td>${fmtDate(s.etd)}</td>
       <td class="fw-600">${fmtDate(s.eta)}</td>
-      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+      <td><span class="stage-badge stage-${safeStage(o.stage)}">${STAGE_ICONS[safeStage(o.stage)]} ${o.stage}</span></td>
     </tr>`;
   }).join('');
   document.getElementById('shipmentTableBody').innerHTML = rows;
@@ -778,7 +778,7 @@ function renderInventory() {
   const productCards = `<div class="grid-3" style="gap:12px">${inv.map(i => {
     const belowSafety = i.currentStock < i.safetyStock;
     const borderColor = belowSafety ? 'var(--danger)' : i.currentStock < i.safetyStock * 1.2 ? 'var(--warning)' : 'var(--gray-200)';
-    const doi = (i.currentStock / i.avgDailyUsage).toFixed(0);
+    const doi = i.avgDailyUsage > 0 ? (i.currentStock / i.avgDailyUsage).toFixed(0) : '∞';
     return `<div class="stat-card" style="border:2px solid ${borderColor};flex-direction:column;align-items:flex-start;gap:8px">
       <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
         <span class="fw-600" style="font-size:14px">${i.product}</span>
@@ -804,12 +804,12 @@ function renderInventory() {
     const pct = Math.min((i.currentStock / maxVal) * 100, 100);
     const safetyPct = Math.min((i.safetyStock / maxVal) * 100, 100);
     const barColor = i.currentStock < i.safetyStock ? 'var(--danger)' : i.currentStock < i.safetyStock * 1.2 ? 'var(--warning)' : 'var(--primary-light)';
-    const doi = (i.currentStock / i.avgDailyUsage).toFixed(0);
+    const doiVal = i.avgDailyUsage > 0 ? (i.currentStock / i.avgDailyUsage).toFixed(0) : '∞';
     return `<div style="margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span class="fw-600">${i.product}</span>
         <span style="font-size:12px;color:var(--gray-600)">${i.location}</span>
-        <span style="font-size:13px"><b style="color:${barColor}">${i.currentStock.toLocaleString()} MT</b> <span style="color:var(--gray-600)">/ 안전재고 ${i.safetyStock} MT · DOI ${doi}일</span></span>
+        <span style="font-size:13px"><b style="color:${barColor}">${i.currentStock.toLocaleString()} MT</b> <span style="color:var(--gray-600)">/ 안전재고 ${i.safetyStock} MT · DOI ${doiVal}일</span></span>
       </div>
       <div class="inv-bar-track">
         <div class="inv-bar-fill" style="width:${pct}%;background:${barColor}"></div>
@@ -865,7 +865,7 @@ function renderInventory() {
   // Table
   const rows = inv.map(i => {
     const projected = i.currentStock + i.incomingStock - i.outgoingPlan;
-    const doi = (i.currentStock / i.avgDailyUsage).toFixed(1);
+    const doi = i.avgDailyUsage > 0 ? (i.currentStock / i.avgDailyUsage).toFixed(1) : '∞';
     const diff = i.currentStock - i.safetyStock;
     return `<tr>
       <td class="fw-600">${i.product}</td>
@@ -924,7 +924,7 @@ function renderHistory() {
       <td class="text-right">${fmtPrice(n.marketRef)}</td>
       <td class="text-right">${savingPct != null ? `<span class="price-good">-${savingPct}%</span>` : '—'}</td>
       <td>${fmtDate(o.contract.signDate)}</td>
-      <td><span class="stage-badge stage-${o.stage}">${STAGE_ICONS[o.stage]} ${o.stage}</span></td>
+      <td><span class="stage-badge stage-${safeStage(o.stage)}">${STAGE_ICONS[safeStage(o.stage)]} ${o.stage}</span></td>
     </tr>`;
   }).join('');
   document.getElementById('historyTableBody').innerHTML = rows;
