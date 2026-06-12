@@ -40,7 +40,7 @@ $py = "C:\Users\Admin\AppData\Local\Programs\Python\Python312\python.exe"
 cd C:\path\to\resin-tracker
 & $py -m http.server 8080
 ```
-→ 브라우저에서 `http://localhost:8080` 접속
+→ 브라우저에서 `http://localhost:8080/index.html` 접속 (루트 `/`는 디렉토리 목록만 표시됨)
 
 ### VS Code
 Live Server 확장 설치 후 `index.html` 우클릭 → **Open with Live Server**
