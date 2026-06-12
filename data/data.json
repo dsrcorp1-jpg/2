@@ -1,5 +1,5 @@
-{
-  "lastUpdated": "2026-06-11",
+﻿{
+  "lastUpdated": "2026-06-12",
   "orders": [
     {
       "id": "ORD-2026-001",
@@ -285,6 +285,6 @@
     { "month": "2026-03", "ppHomo": 1000, "ppCopo": 1055, "hdpe": 975, "ldpe": 1045, "lldpe": 955, "naphtha": 625, "brent": 73 },
     { "month": "2026-04", "ppHomo": 1005, "ppCopo": 1060, "hdpe": 980, "ldpe": 1050, "lldpe": 960, "naphtha": 628, "brent": 74 },
     { "month": "2026-05", "ppHomo": 1010, "ppCopo": 1065, "hdpe": 985, "ldpe": 1055, "lldpe": 965, "naphtha": 630, "brent": 74 },
-    { "month": "2026-06", "ppHomo": 1010, "ppCopo": 1070, "hdpe": 990, "ldpe": 1060, "lldpe": 970, "naphtha": 630, "brent": 74 }
+    { "month": "2026-06", "ppHomo": 1200, "ppCopo": 1070, "hdpe": 990, "ldpe": 1060, "lldpe": 970, "naphtha": 630, "brent": 74 }
   ]
 }
