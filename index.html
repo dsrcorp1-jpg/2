@@ -568,7 +568,7 @@ function renderNego() {
   const rows = DATA.orders.map(o => {
     const n = o.negotiation;
     const saving = n.offerPrice && n.contractPrice ? n.offerPrice - n.contractPrice : null;
-    const savingPct = saving ? ((saving / n.offerPrice)*100).toFixed(1) : null;
+    const savingPct = saving && n.offerPrice > 0 ? ((saving / n.offerPrice)*100).toFixed(1) : null;
     return `<tr>
       <td class="fw-600">${o.id}</td>
       <td>${o.product} <span class="chip">${o.grade}</span></td>
@@ -679,7 +679,7 @@ function renderShipment() {
       <div style="flex:1">
         <div class="fw-600">${o.id} · ${o.product} <span class="chip">${o.grade}</span></div>
         <div style="font-size:12px;color:var(--gray-600);margin-top:3px">
-          ${o.supplier} · ${o.shipment.vessel || '선박 미정'} · ${o.shipment.portOfLoading} → ${o.shipment.portOfDischarge}
+          ${o.supplier} · ${o.shipment.vessel || '선박 미정'} · ${o.shipment.portOfLoading || '—'} → ${o.shipment.portOfDischarge || '—'}
         </div>
       </div>
       <div style="text-align:right;font-size:12px">
@@ -833,7 +833,7 @@ function renderInventory() {
       labels: inv.map(i => i.product),
       datasets: [
         { label: '현재고', data: inv.map(i => i.currentStock), backgroundColor: inv.map(i => i.currentStock < i.safetyStock ? 'rgba(239,68,68,0.7)' : 'rgba(59,130,246,0.7)'), borderWidth: 1 },
-        { label: '안전재고', data: inv.map(i => i.safetyStock), backgroundColor: 'rgba(239,68,68,0.15)', borderColor: '#ef4444', borderWidth: 2, type: 'line', pointStyle: 'dash' }
+        { label: '안전재고', data: inv.map(i => i.safetyStock), backgroundColor: 'rgba(239,68,68,0.15)', borderColor: '#ef4444', borderWidth: 2, borderDash: [4,4] }
       ]
     },
     options: {
@@ -934,7 +934,7 @@ function renderHistory() {
 // INIT
 // ─────────────────────────────────────────
 function init() {
-  document.getElementById('lastUpdatedLabel').textContent = '최종 업데이트: ' + DATA.lastUpdated;
+  document.getElementById('lastUpdatedLabel').textContent = '최종 업데이트: ' + (DATA.lastUpdated || '—');
   renderDashboard();
   renderNego();
   renderContract();
